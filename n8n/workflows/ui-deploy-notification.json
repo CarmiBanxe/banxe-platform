@@ -1,0 +1,67 @@
+{
+  "name": "UI Deploy Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ui-deploy",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Deploy Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "resource": "message",
+        "operation": "post",
+        "channel": "#deployments",
+        "text": "=:rocket: *BANXE Platform deployed*\n\nPackage: `{{ $json.body.package }}`\nVersion: `{{ $json.body.version }}`\nEnvironment: `{{ $json.body.env }}`\nBranch: `{{ $json.body.branch }}`\nDeployed at: `{{ $json.body.deployed_at }}`\nCommit: `{{ $json.body.commit_sha }}`"
+      },
+      "id": "slack-deploy",
+      "name": "Slack #deployments",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.body.env }}", "operation": "equal", "value2": "production" }]
+        }
+      },
+      "id": "if-prod",
+      "name": "If production",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 350]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "telegramApi",
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CTIO_CHAT_ID }}",
+        "text": "=🚀 *BANXE Web PRODUCTION deploy*\n\nVersion: `{{ $json.body.version }}`\nCommit: `{{ $json.body.commit_sha }}`\nURL: https://app.banxe.com"
+      },
+      "id": "telegram-prod",
+      "name": "Telegram CTIO (prod only)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [750, 350]
+    }
+  ],
+  "connections": {
+    "Deploy Webhook": { "main": [[{ "node": "Slack #deployments", "type": "main", "index": 0 }, { "node": "If production", "type": "main", "index": 0 }]] },
+    "If production": { "main": [[{ "node": "Telegram CTIO (prod only)", "type": "main", "index": 0 }], []] }
+  },
+  "active": true,
+  "tags": ["deploy", "ui", "notifications"],
+  "meta": { "description": "Notify Slack + Telegram on banxe-platform deployments", "il_ref": "IL-UI-01" }
+}

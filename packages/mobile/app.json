@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "BANXE AI Bank",
+    "slug": "banxe-mobile",
+    "version": "1.0.0",
+    "scheme": "banxe",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A2B6B"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.banxe.mobile",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "BANXE uses Face ID for PSD2 SCA authentication",
+        "NSCameraUsageDescription": "BANXE needs camera access for KYC document capture"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A2B6B"
+      },
+      "package": "com.banxe.mobile",
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      ["expo-local-authentication", {}]
+    ],
+    "extra": {
+      "eas": { "projectId": "banxe-mobile" }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+rules:
+  - id: banxe-ts-no-number-for-money
+    patterns:
+      - pattern-either:
+          - pattern: "const $X: number = parseFloat($Y)"
+          - pattern: "let $X: number = parseFloat($Y)"
+          - pattern: "Number($AMOUNT)"
+          - pattern: "parseFloat($AMOUNT)"
+    message: |
+      Financial amounts must be DecimalString (string), never number/float.
+      Use string representation and server-side Decimal math (FCA I-01).
+      Import DecimalString from @banxe/shared.
+    languages: [typescript, javascript]
+    severity: ERROR
+    paths:
+      include:
+        - "packages/**"
+
+  - id: banxe-ts-no-localstorage-token
+    patterns:
+      - pattern: "localStorage.setItem($KEY, $TOKEN)"
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: '.*(token|auth|session|jwt).*'
+    message: |
+      Never store auth tokens in localStorage — vulnerable to XSS.
+      Web: use httpOnly cookies via Next.js route handler.
+      Mobile: use expo-secure-store.
+    languages: [typescript, javascript]
+    severity: ERROR
+
+  - id: banxe-ts-no-console-pii
+    patterns:
+      - pattern-either:
+          - pattern: "console.log(..., $OBJ.iban, ...)"
+          - pattern: "console.log(..., $OBJ.pan, ...)"
+          - pattern: "console.log(..., $OBJ.card_number, ...)"
+          - pattern: "console.log(..., $OBJ.password, ...)"
+    message: |
+      Possible PII/secrets in console.log — GDPR violation.
+      Remove before production. Use structured logging without PII fields.
+    languages: [typescript, javascript]
+    severity: WARNING
+    paths:
+      include:
+        - "packages/**"
+
+  - id: banxe-ts-pan-display
+    pattern: |
+      $X = $OBJ.card_number
+    message: |
+      Never display raw card numbers. Use maskPAN(last4) instead.
+      Format: '•••• •••• •••• XXXX'
+    languages: [typescript]
+    severity: ERROR
+    paths:
+      include:
+        - "packages/web/src/**"
+        - "packages/mobile/app/**"
+
+  - id: banxe-ts-require-aria-label
+    patterns:
+      - pattern: "<Pressable $...PROPS />"
+      - pattern-not: "<Pressable $...PROPS accessibilityLabel=$LABEL $...REST />"
+    message: |
+      All Pressable components require accessibilityLabel for WCAG 2.1 AA compliance.
+    languages: [typescript]
+    severity: WARNING
+    paths:
+      include:
+        - "packages/mobile/**"

@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #1A2B6B;
+  --color-accent: #00C6AE;
+  --color-bg: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-text: #1A1A2E;
+  --color-error: #DC2626;
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+}
+
+@theme {
+  --color-primary: #1A2B6B;
+  --color-accent: #00C6AE;
+  --color-bg: #F5F7FA;
+  --color-surface: #FFFFFF;
+  --color-banxe-text: #1A1A2E;
+  --color-error: #DC2626;
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: Roboto, system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* WCAG 2.1 AA focus visible */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Session timeout overlay */
+.session-timeout-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

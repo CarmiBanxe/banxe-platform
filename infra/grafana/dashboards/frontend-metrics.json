@@ -1,0 +1,64 @@
+{
+  "description": "BANXE Platform — Frontend Metrics (Core Web Vitals + errors) | IL-UI-01",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Page Load Time (LCP) — ms",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{
+        "rawSql": "SELECT toStartOfMinute(ts) AS time, avg(value) AS lcp_ms FROM banxe.web_vitals WHERE metric='LCP' AND ts >= now() - INTERVAL 1 HOUR GROUP BY time ORDER BY time",
+        "format": "time_series"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "thresholds": { "steps": [{ "color": "green", "value": 0 }, { "color": "yellow", "value": 2500 }, { "color": "red", "value": 4000 }] } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "JS Error Rate",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [{
+        "rawSql": "SELECT count() AS errors FROM banxe.frontend_errors WHERE ts >= now() - INTERVAL 1 HOUR",
+        "format": "table"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "API Latency from Browser (p95) — ms",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [{
+        "rawSql": "SELECT endpoint, quantile(0.95)(duration_ms) AS p95 FROM banxe.browser_api_calls WHERE ts >= now() - INTERVAL 1 HOUR GROUP BY endpoint ORDER BY p95 DESC LIMIT 10",
+        "format": "table"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Active Sessions",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 },
+      "targets": [{
+        "rawSql": "SELECT count(DISTINCT session_id) AS active FROM banxe.web_sessions WHERE last_seen >= now() - INTERVAL 5 MINUTE",
+        "format": "table"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "Page Views by Route",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [{
+        "rawSql": "SELECT route, count() AS views, countIf(is_error=1) AS errors FROM banxe.page_views WHERE ts >= now() - INTERVAL 24 HOUR GROUP BY route ORDER BY views DESC",
+        "format": "table"
+      }]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["frontend", "web-vitals", "banxe"],
+  "title": "BANXE Frontend Metrics",
+  "uid": "banxe-frontend-metrics",
+  "time": { "from": "now-1h", "to": "now" }
+}
