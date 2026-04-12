@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: runner
+    image: banxe-web:local
+    container_name: banxe-platform-web
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_MCP_URL=${NEXT_PUBLIC_MCP_URL:-http://localhost:9100/mcp}
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - banxe-net
+
+networks:
+  banxe-net:
+    name: banxe-platform-network
+    driver: bridge
