@@ -1,7 +1,7 @@
 /**
  * packages/mobile/app/sca/index.tsx
  * BANXE AI Bank — PSD2 SCA Screen (Mobile)
- * S14-08 | PSD2 Directive 2015/2366 Art.97 | banxe-platform
+ * S14-08 | S15-03 | PSD2 Directive 2015/2366 Art.97 | banxe-platform
  *
  * SCA (Strong Customer Authentication) required for:
  *   - Payments > £30 (PSR 2017 Reg.71)
@@ -9,16 +9,12 @@
  *   - Sensitive profile changes
  *
  * Mobile SCA methods:
- *   - BIOMETRIC: expo-local-authentication (Face ID / Touch ID)
- *   - OTP: 6-digit TOTP from authenticator app
- *   - PUSH: in-app notification (future, with FCM)
- *
- * STATUS: STUB — biometric calls expo-local-authentication,
- * OTP calls /auth/sca on banxe-emi-stack.
+ *   - BIOMETRIC: expo-local-authentication (Face ID / Touch ID) → POST /v1/auth/sca/verify
+ *   - OTP: 6-digit TOTP from authenticator app → POST /v1/auth/sca/verify
  *
  * Navigation: This screen is pushed modally from any flow requiring SCA.
- * On success → router.back() with params { scaApproved: true, challengeId }
- * On failure → router.back() with params { scaApproved: false }
+ * Params: challenge_id (required), method, expires_at, payment_amount
+ * On success → router.back() (caller detects via useFocusEffect + store)
  */
 
 import { useState, useCallback, useEffect } from 'react'
@@ -36,13 +32,14 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as Haptics from 'expo-haptics'
-import { colors, spacing, typography } from '@banxe/shared'
+import { colors, spacing, scaApi, useAuthStore } from '@banxe/shared'
 
 type SCAMethod = 'biometric' | 'otp' | 'push'
 type SCAStep = 'prompt' | 'otp_entry' | 'submitting' | 'success' | 'error'
 
 export default function SCAScreen() {
   const router = useRouter()
+  const { token } = useAuthStore()
   const params = useLocalSearchParams<{
     challenge_id: string
     method: SCAMethod
@@ -85,18 +82,30 @@ export default function SCAScreen() {
       disableDeviceFallback: false,
     })
 
-    if (result.success) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      setStep('success')
-      // TODO: submit biometric proof to /auth/sca endpoint
-      router.back()
-      // router.setParams({ scaApproved: 'true', challengeId: challenge_id })
-    } else {
+    if (!result.success) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       setErrorMsg(result.error === 'user_cancel' ? 'Authentication cancelled.' : 'Biometric failed. Try your code.')
       setStep('prompt')
+      return
     }
-  }, [biometricAvailable, challenge_id, payment_amount, router])
+
+    // Biometric confirmed locally — submit proof to backend
+    const verifyResult = await scaApi.verify(token ?? '', {
+      challenge_id,
+      biometric_proof: `biometric:approved:${challenge_id}`,
+    })
+
+    if (!verifyResult.ok || !verifyResult.data.verified) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      setErrorMsg(verifyResult.data?.error ?? 'Biometric verification failed. Try your code.')
+      setStep('prompt')
+      return
+    }
+
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    setStep('success')
+    router.back()
+  }, [biometricAvailable, challenge_id, payment_amount, router, token])
 
   const handleOTPSubmit = useCallback(async () => {
     if (otp.length !== 6) {
@@ -108,12 +117,30 @@ export default function SCAScreen() {
     setErrorMsg(null)
 
     try {
-      // STUB: POST /auth/sca { challenge_id, response: otp }
-      // const { data, error } = await authApi.confirmSCA({ challenge_id, response: otp })
-      // if (error) throw new Error(error.message)
+      const result = await scaApi.verify(token ?? '', {
+        challenge_id,
+        otp_code: otp,
+      })
 
-      // Simulate success (remove when real endpoint is wired)
-      await new Promise((r) => setTimeout(r, 800))
+      if (!result.ok) {
+        throw new Error(result.error.detail ?? 'Verification failed')
+      }
+
+      if (!result.data.verified) {
+        const remaining = result.data.attempts_remaining
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+        if (remaining === 0) {
+          setErrorMsg('Too many failed attempts. Please start again.')
+          setStep('prompt')
+        } else {
+          setErrorMsg(
+            `Invalid code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`,
+          )
+          setStep('otp_entry')
+        }
+        return
+      }
+
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
       setStep('success')
       router.back()
@@ -122,7 +149,7 @@ export default function SCAScreen() {
       setErrorMsg(err instanceof Error ? err.message : 'Invalid code. Please try again.')
       setStep('otp_entry')
     }
-  }, [challenge_id, otp, router])
+  }, [challenge_id, otp, router, token])
 
   const handleCancel = useCallback(() => {
     router.back()
