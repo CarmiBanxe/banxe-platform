@@ -4,7 +4,15 @@
  * IL-UI-01 | BANXE AI Bank
  */
 import type { ApiResult, ApiError } from './types/api.js'
-import type { LoginRequest, TokenResponse } from './types/auth.js'
+import type {
+  LoginRequest,
+  TokenResponse,
+  SCAInitiateRequest,
+  SCAInitiateResponse,
+  SCAVerifyRequest,
+  SCAVerifyResponse,
+  SCAMethodsResponse,
+} from './types/auth.js'
 import type { Account, Balance, Transaction, Statement } from './types/account.js'
 import type { KYCSubmission, KYCStatusResponse } from './types/kyc.js'
 import type { ComplianceDashboard, AMLScreening, ReconResult } from './types/compliance.js'
@@ -62,6 +70,41 @@ export const authApi = {
 
   logout: (token: string) =>
     apiFetch<void>('/v1/auth/logout', { method: 'POST', token }),
+}
+
+// ── SCA (PSD2 Art.97) ─────────────────────────────────────────────────────────
+
+export const scaApi = {
+  /**
+   * Initiate SCA challenge for a transaction.
+   * POST /v1/auth/sca/challenge
+   * Returns challenge_id to pass to verify().
+   */
+  initiate: (token: string, req: SCAInitiateRequest) =>
+    apiFetch<SCAInitiateResponse>('/v1/auth/sca/challenge', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      token,
+    }),
+
+  /**
+   * Verify SCA challenge with OTP or biometric proof.
+   * POST /v1/auth/sca/verify
+   * On success: returns sca_token (PSD2 RTS Art.10 JWT) for payment auth.
+   */
+  verify: (token: string, req: SCAVerifyRequest) =>
+    apiFetch<SCAVerifyResponse>('/v1/auth/sca/verify', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      token,
+    }),
+
+  /**
+   * Get available SCA methods for a customer.
+   * GET /v1/auth/sca/methods/{customer_id}
+   */
+  getMethods: (token: string, customerId: string) =>
+    apiFetch<SCAMethodsResponse>(`/v1/auth/sca/methods/${customerId}`, { token }),
 }
 
 // ── Accounts ──────────────────────────────────────────────────────────────────

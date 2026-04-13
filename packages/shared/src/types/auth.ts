@@ -45,3 +45,46 @@ export interface SCAConfirmation {
   challenge_id: string
   response: string  // biometric result or OTP
 }
+
+// ── SCA API request/response types (S15-01/S15-02) ──────────────────────────
+
+/** POST /v1/auth/sca/challenge request */
+export interface SCAInitiateRequest {
+  customer_id: string
+  transaction_id: string
+  method: 'otp' | 'biometric'
+  amount?: string  // DecimalString — PSD2 RTS Art.10 dynamic linking
+  payee?: string   // Payee name — PSD2 RTS Art.10 dynamic linking
+}
+
+/** POST /v1/auth/sca/challenge response */
+export interface SCAInitiateResponse {
+  challenge_id: string
+  transaction_id: string
+  method: 'otp' | 'biometric'
+  expires_at: ISODateString
+  message: string
+}
+
+/** POST /v1/auth/sca/verify request */
+export interface SCAVerifyRequest {
+  challenge_id: string
+  otp_code?: string          // 6-digit TOTP (method=otp)
+  biometric_proof?: string   // WebAuthn assertion (method=biometric)
+}
+
+/** POST /v1/auth/sca/verify response */
+export interface SCAVerifyResponse {
+  verified: boolean
+  transaction_id: string
+  sca_token?: string         // PSD2 RTS Art.10 JWT — include in payment Authorization
+  error?: string
+  attempts_remaining?: number
+}
+
+/** GET /v1/auth/sca/methods/{customer_id} response */
+export interface SCAMethodsResponse {
+  customer_id: string
+  methods: string[]
+  preferred: string
+}
