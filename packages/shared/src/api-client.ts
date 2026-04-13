@@ -68,6 +68,22 @@ export const authApi = {
       body: JSON.stringify(req),
     }),
 
+  /**
+   * Rotate refresh token → new access token + refresh token.
+   * POST /v1/auth/token/refresh
+   * PSD2 RTS: call silently before access token expires (≥ 60s before expiry).
+   */
+  refresh: (refreshToken: string) =>
+    apiFetch<{
+      token: string
+      expires_at: string
+      refresh_token: string
+      token_type: string
+    }>('/v1/auth/token/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    }),
+
   logout: (token: string) =>
     apiFetch<void>('/v1/auth/logout', { method: 'POST', token }),
 }
