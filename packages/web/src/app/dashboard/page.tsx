@@ -107,6 +107,10 @@ export default function DashboardPage() {
             <QuickAction label="Transactions" icon="≡" onClick={() => router.push('/transactions')} />
             <QuickAction label="Statements" icon="📄" onClick={() => router.push('/statements')} />
             <QuickAction label="Compliance" icon="✓" onClick={() => router.push('/compliance')} />
+            <QuickAction label="AML Monitor" icon="🔍" onClick={() => router.push('/aml')} />
+            <QuickAction label="Safeguarding" icon="🏦" onClick={() => router.push('/safeguarding')} />
+            <QuickAction label="KYC" icon="🪪" onClick={() => router.push('/kyc')} />
+            <QuickAction label="Settings" icon="⚙" onClick={() => router.push('/settings')} />
           </div>
         </section>
 
