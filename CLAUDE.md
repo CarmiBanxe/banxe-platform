@@ -61,6 +61,21 @@ pnpm typecheck         # TypeScript check
 - [x] .ai/registries/ (ui-map, web-map, mobile-map, shared-map)
 - [x] .ai/soul.md — UI platform soul
 
+## UI Skills
+
+Use these skills for all UI generation and modification tasks:
+
+- `banxe-ui-rules`: BANXE financial UX conventions, compliance disclosures, decimal-safe amount handling, PSD2/GDPR/KYC UI constraints.
+- `material-3`: MD3 semantic roles, token mapping, component semantics, shape/elevation/accessibility rules.
+- `ui-sync`: parallel web + mobile generation discipline across `packages/web` and `packages/mobile`.
+
+### UI generation policy
+- Always use BANXE tokens from this file as source of truth.
+- Always apply BANXE regulatory UX rules before visual polish.
+- Always map BANXE tokens to MD3 semantic roles rather than inventing new visual tokens.
+- Always generate or update web and mobile in parallel unless explicitly instructed otherwise.
+- Never use float-based money formatting in UI logic.
+
 ## Related repos
 - banxe-emi-stack: `/home/mmber/banxe-emi-stack` (backend)
 - banxe-architecture: `github.com/CarmiBanxe/banxe-architecture`
